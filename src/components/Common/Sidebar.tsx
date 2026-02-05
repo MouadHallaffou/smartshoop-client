@@ -13,6 +13,7 @@ const navItems: NavItem[] = [
     { name: 'Produits', path: '/products' },
     { name: 'Commandes', path: '/orders' },
     { name: 'Paiements', path: '/payments' },
+    { name: 'Codes Promo', path: '/promo-codes' },
 ];
 
 export const Sidebar: React.FC = () => {
@@ -29,8 +30,8 @@ export const Sidebar: React.FC = () => {
                                 <Link
                                     to={item.path}
                                     className={`block px-4 py-2 rounded-lg transition-colors ${location.pathname === item.path
-                                            ? 'bg-primary-600 text-white'
-                                            : 'hover:bg-gray-700'
+                                        ? 'bg-primary-600 text-white'
+                                        : 'hover:bg-gray-700'
                                         }`}
                                 >
                                     {item.name}

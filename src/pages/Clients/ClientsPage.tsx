@@ -69,6 +69,34 @@ export const ClientsPage: React.FC = () => {
         { key: 'username', title: 'Username' },
         { key: 'email', title: 'Email' },
         {
+            key: 'customerTier',
+            title: 'Badge',
+            render: (client: Client) => {
+                const tierColors = {
+                    BASIC: 'bg-gray-100 text-gray-800',
+                    SILVER: 'bg-slate-100 text-slate-800',
+                    GOLD: 'bg-yellow-100 text-yellow-800',
+                    PLATINUM: 'bg-purple-100 text-purple-800',
+                };
+                const tier = client.customerTier || 'BASIC';
+                return (
+                    <span className={`px-2 py-1 rounded-full text-xs font-medium ${tierColors[tier]}`}>
+                        {tier}
+                    </span>
+                );
+            },
+        },
+        // {
+        //     key: 'totalOrders',
+        //     title: 'Commandes',
+        //     render: (client: Client) => client.totalOrders || 0,
+        // },
+        {
+            key: 'totalAmount',
+            title: 'T.Cumulé',
+            render: (client: Client) => `${(client.totalAmount || 0).toFixed(2)} DH`,
+        },
+        {
             key: 'actions',
             title: 'Actions',
             render: (client: Client) => (

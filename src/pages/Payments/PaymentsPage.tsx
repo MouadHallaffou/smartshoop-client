@@ -64,7 +64,11 @@ export const PaymentsPage: React.FC = () => {
     };
 
     const columns = [
-        { key: 'numero', title: 'Numéro' },
+        {
+            key: 'numeroPaiement',
+            title: 'Numéro',
+            render: (payment: Payment) => payment.numeroPaiement || payment.numero || '-',
+        },
         {
             key: 'order',
             title: 'Commande',
@@ -75,7 +79,11 @@ export const PaymentsPage: React.FC = () => {
             title: 'Montant',
             render: (payment: Payment) => `${payment.montant} DH`,
         },
-        { key: 'typePayment', title: 'Type' },
+        {
+            key: 'typePaiement',
+            title: 'Type',
+            render: (payment: Payment) => payment.typePaiement || payment.typePayment,
+        },
         {
             key: 'datePaiement',
             title: 'Date',
@@ -100,28 +108,32 @@ export const PaymentsPage: React.FC = () => {
         {
             key: 'actions',
             title: 'Actions',
-            render: (payment: Payment) => (
-                <div className="flex gap-2">
-                    {payment.status === 'PENDING' && payment.numero && (
-                        <>
-                            <Button
-                                size="sm"
-                                variant="success"
-                                onClick={() => handleConfirm(payment.numero!)}
-                            >
-                                Confirmer
-                            </Button>
-                            <Button
-                                size="sm"
-                                variant="danger"
-                                onClick={() => handleCancel(payment.numero!)}
-                            >
-                                Annuler
-                            </Button>
-                        </>
-                    )}
-                </div>
-            ),
+            render: (payment: Payment) => {
+                const type = payment.typePaiement || payment.typePayment;
+                const numero = payment.numeroPaiement || payment.numero;
+                return (
+                    <div className="flex gap-2">
+                        {payment.status === 'PENDING' && type === 'CHEQUE' && numero && (
+                            <>
+                                <Button
+                                    size="sm"
+                                    variant="success"
+                                    onClick={() => handleConfirm(numero)}
+                                >
+                                    Confirmer
+                                </Button>
+                                <Button
+                                    size="sm"
+                                    variant="danger"
+                                    onClick={() => handleCancel(numero)}
+                                >
+                                    Annuler
+                                </Button>
+                            </>
+                        )}
+                    </div>
+                );
+            },
         },
     ];
 
@@ -166,7 +178,7 @@ export const PaymentsPage: React.FC = () => {
                             <option value={0}>Sélectionner une commande</option>
                             {orders.map((order) => (
                                 <option key={order.id} value={order.id}>
-                                    Commande #{order.id} - {order.client?.name} - {order.totalAmount} DH
+                                    Commande #{order.id} - {order.client?.name} - {order.totalTTC || 0} DH
                                 </option>
                             ))}
                         </select>
@@ -186,13 +198,18 @@ export const PaymentsPage: React.FC = () => {
                         <select
                             className="w-full px-3 py-2 border border-gray-300 rounded-lg"
                             value={formData.typePayment}
-                            onChange={(e) => setFormData({ ...formData, typePayment: e.target.value as Payment['typePayment'] })}
+                            onChange={(e) => setFormData({
+                                ...formData,
+                                typePayment: e.target.value as Payment['typePayment'],
+                                reference: '',
+                                banque: '',
+                                dateEcheance: '',
+                            })}
                             required
                         >
                             <option value="ESPECE">Espèce</option>
                             <option value="CHEQUE">Chèque</option>
                             <option value="VIREMENT">Virement</option>
-                            <option value="CARTE">Carte</option>
                         </select>
                     </div>
 
@@ -204,11 +221,71 @@ export const PaymentsPage: React.FC = () => {
                         required
                     />
 
-                    <Input
-                        label="Référence (optionnel)"
-                        value={formData.reference || ''}
-                        onChange={(e) => setFormData({ ...formData, reference: e.target.value })}
-                    />
+                    {formData.typePayment === 'CHEQUE' && (
+                        <>
+                            <Input
+                                label="Référence du chèque"
+                                value={formData.reference || ''}
+                                onChange={(e) => setFormData({ ...formData, reference: e.target.value })}
+                                required
+                            />
+                            <Input
+                                label="Banque"
+                                value={formData.banque || ''}
+                                onChange={(e) => setFormData({ ...formData, banque: e.target.value })}
+                                required
+                            />
+                            <Input
+                                label="Date d'échéance"
+                                type="date"
+                                value={formData.dateEcheance || ''}
+                                onChange={(e) => setFormData({ ...formData, dateEcheance: e.target.value })}
+                                required
+                            />
+                            <Input
+                                label="Motif (optionnel)"
+                                value={formData.motif || ''}
+                                onChange={(e) => setFormData({ ...formData, motif: e.target.value })}
+                            />
+                        </>
+                    )}
+
+                    {formData.typePayment === 'VIREMENT' && (
+                        <>
+                            <Input
+                                label="Référence du virement"
+                                value={formData.reference || ''}
+                                onChange={(e) => setFormData({ ...formData, reference: e.target.value })}
+                                required
+                            />
+                            <Input
+                                label="Banque"
+                                value={formData.banque || ''}
+                                onChange={(e) => setFormData({ ...formData, banque: e.target.value })}
+                                required
+                            />
+                            <Input
+                                label="Date d'encaissement"
+                                type="date"
+                                value={formData.dateEncaissement || ''}
+                                onChange={(e) => setFormData({ ...formData, dateEncaissement: e.target.value })}
+                            />
+                            <Input
+                                label="Motif"
+                                value={formData.motif || ''}
+                                onChange={(e) => setFormData({ ...formData, motif: e.target.value })}
+                                required
+                            />
+                        </>
+                    )}
+
+                    {formData.typePayment === 'ESPECE' && (
+                        <Input
+                            label="Référence (optionnel)"
+                            value={formData.reference || ''}
+                            onChange={(e) => setFormData({ ...formData, reference: e.target.value })}
+                        />
+                    )}
                 </form>
             </Modal>
         </div>

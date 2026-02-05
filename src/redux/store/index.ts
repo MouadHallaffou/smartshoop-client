@@ -3,6 +3,7 @@ import clientReducer from "../slices/clientSlice";
 import productReducer from "../slices/productSlice";
 import orderReducer from "../slices/orderSlice";
 import paymentReducer from "../slices/paymentSlice";
+import promoCodeReducer from "../slices/promoCodeSlice";
 
 export const store = configureStore({
   reducer: {
@@ -10,6 +11,7 @@ export const store = configureStore({
     products: productReducer,
     orders: orderReducer,
     payments: paymentReducer,
+    promoCodes: promoCodeReducer,
   },
 });
 

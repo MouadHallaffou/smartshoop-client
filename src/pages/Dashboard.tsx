@@ -6,7 +6,6 @@ import { clientService } from '../services/ClientService';
 import { orderService } from '../services/OrderService';
 import { paymentService } from '../services/PaymentService';
 
-// getallProducts => using productservice
 export const Dashboard: React.FC = () => {
     const [stats, setStats] = useState({
         clients: 0,

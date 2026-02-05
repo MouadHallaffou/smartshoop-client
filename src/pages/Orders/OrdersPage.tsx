@@ -15,6 +15,8 @@ export const OrdersPage: React.FC = () => {
     const { clients } = useAppSelector((state) => state.clients);
     const { products } = useAppSelector((state) => state.products);
     const [isModalOpen, setIsModalOpen] = useState(false);
+    const [isEditMode, setIsEditMode] = useState(false);
+    const [editingOrderId, setEditingOrderId] = useState<number | undefined>();
     const [formData, setFormData] = useState<Order>({
         clientId: 0,
         orderItems: [],
@@ -31,12 +33,27 @@ export const OrdersPage: React.FC = () => {
     };
 
     const handleOpenModal = () => {
+        setIsEditMode(false);
+        setEditingOrderId(undefined);
         setFormData({ clientId: 0, orderItems: [{ productId: 0, quantity: 1 }] });
+        setIsModalOpen(true);
+    };
+
+    const handleOpenEditModal = (order: Order) => {
+        setIsEditMode(true);
+        setEditingOrderId(order.id);
+        setFormData({
+            clientId: order.clientId,
+            promoCode: order.promoCode || '',
+            orderItems: order.orderItems.length > 0 ? order.orderItems : [{ productId: 0, quantity: 1 }],
+        });
         setIsModalOpen(true);
     };
 
     const handleCloseModal = () => {
         setIsModalOpen(false);
+        setIsEditMode(false);
+        setEditingOrderId(undefined);
         setFormData({ clientId: 0, orderItems: [] });
     };
 
@@ -62,9 +79,20 @@ export const OrdersPage: React.FC = () => {
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        await dispatch(createOrder(formData));
+        if (isEditMode && editingOrderId) {
+            await dispatch(updateOrder({ id: editingOrderId, order: formData }));
+        } else {
+            await dispatch(createOrder(formData));
+        }
         handleCloseModal();
         dispatch(fetchOrders({ page: pagination.currentPage, size: 10 }));
+    };
+
+    const handleDelete = async (id: number) => {
+        if (window.confirm('Êtes-vous sûr de vouloir supprimer cette commande ?')) {
+            await dispatch(deleteOrder(id));
+            dispatch(fetchOrders({ page: pagination.currentPage, size: 10 }));
+        }
     };
 
     const handleConfirm = async (id: number) => {
@@ -87,9 +115,14 @@ export const OrdersPage: React.FC = () => {
             render: (order: Order) => order.client?.name || '-',
         },
         {
-            key: 'totalAmount',
-            title: 'Montant Total',
-            render: (order: Order) => `${order.totalAmount || 0} DH`,
+            key: 'totalTTC',
+            title: 'Montant Total TTC',
+            render: (order: Order) => `${order.totalTTC || 0} DH`,
+        },
+        {
+            key: 'montantReste',
+            title: 'Reste à Payer',
+            render: (order: Order) => `${order.montantReste || 0} DH`,
         },
         {
             key: 'status',
@@ -110,28 +143,48 @@ export const OrdersPage: React.FC = () => {
         {
             key: 'actions',
             title: 'Actions',
-            render: (order: Order) => (
-                <div className="flex gap-2">
-                    {order.status === 'PENDING' && (
-                        <>
-                            <Button
-                                size="sm"
-                                variant="success"
-                                onClick={() => order.id && handleConfirm(order.id)}
-                            >
-                                Confirmer
-                            </Button>
-                            <Button
-                                size="sm"
-                                variant="danger"
-                                onClick={() => order.id && handleCancel(order.id)}
-                            >
-                                Annuler
-                            </Button>
-                        </>
-                    )}
-                </div>
-            ),
+            render: (order: Order) => {
+                const isPending = (order.status === 'PENDING' || order.orderStatus === 'PENDING');
+                const hasPaiements = order.paiements && order.paiements.length > 0;
+                const showButtons = isPending && !hasPaiements;
+
+                return (
+                    <div className="flex gap-2">
+                        {showButtons && (
+                            <>
+                                <Button
+                                    size="sm"
+                                    variant="primary"
+                                    onClick={() => handleOpenEditModal(order)}
+                                >
+                                    Modifier
+                                </Button>
+                                <Button
+                                    size="sm"
+                                    variant="success"
+                                    onClick={() => order.id && handleConfirm(order.id)}
+                                >
+                                    Confirmer
+                                </Button>
+                                <Button
+                                    size="sm"
+                                    variant="danger"
+                                    onClick={() => order.id && handleCancel(order.id)}
+                                >
+                                    Annuler
+                                </Button>
+                                <Button
+                                    size="sm"
+                                    variant="danger"
+                                    onClick={() => order.id && handleDelete(order.id)}
+                                >
+                                    Supprimer
+                                </Button>
+                            </>
+                        )}
+                    </div>
+                );
+            },
         },
     ];
 
@@ -154,13 +207,13 @@ export const OrdersPage: React.FC = () => {
             <Modal
                 isOpen={isModalOpen}
                 onClose={handleCloseModal}
-                title="Créer une commande"
+                title={isEditMode ? "Modifier une commande" : "Créer une commande"}
                 footer={
                     <>
                         <Button variant="secondary" onClick={handleCloseModal}>
                             Annuler
                         </Button>
-                        <Button onClick={handleSubmit}>Créer</Button>
+                        <Button onClick={handleSubmit}>{isEditMode ? "Modifier" : "Créer"}</Button>
                     </>
                 }
             >
@@ -180,6 +233,17 @@ export const OrdersPage: React.FC = () => {
                                 </option>
                             ))}
                         </select>
+                    </div>
+
+                    <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Code Promo (optionnel)</label>
+                        <input
+                            type="text"
+                            className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+                            placeholder="Ex: PROMO-ABC123"
+                            value={formData.promoCode || ''}
+                            onChange={(e) => setFormData({ ...formData, promoCode: e.target.value })}
+                        />
                     </div>
 
                     <div>
