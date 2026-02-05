@@ -120,18 +120,6 @@ L'application consomme les endpoints suivants :
 
 Le thème Tailwind est configuré dans [tailwind.config.js](tailwind.config.js) avec des couleurs personnalisées pour le projet.
 
-## 📝 Notes importantes
-
-- L'authentification n'est pas implémentée (comme demandé)
-- Tous les composants utilisent TypeScript pour le type-safety
-- Redux Toolkit gère l'état global de l'application
-- Les appels API incluent la gestion des erreurs
-- Pagination côté serveur pour toutes les listes
-
-## 🐛 Dépannage
-
-Si vous rencontrez des problèmes de CORS, assurez-vous que votre backend Spring Boot autorise les requêtes depuis `http://localhost:5173`.
-
 ## 📄 License
 
 Ce projet est développé dans le cadre de SmartShop.
